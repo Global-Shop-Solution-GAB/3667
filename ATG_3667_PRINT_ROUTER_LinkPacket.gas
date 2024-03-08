@@ -1,0 +1,66 @@
+Program.Sub.ScreenSU.Start
+Program.Sub.ScreenSU.End
+
+Program.Sub.Preflight.Start
+
+Program.Sub.Preflight.End
+
+Program.Sub.Main.Start
+
+V.Local.i.Declare(Long)
+V.Local.iHdl.Declare(Long)
+V.Local.sHTML.Declare(String)
+V.Local.sHLinkArr.Declare(String)
+V.Local.sRouter.Declare(String)
+V.Local.sQuery.Declare(String)
+F.Intrinsic.Debug.Stop
+
+F.ODBC.Connection!conx.OpenConnection(V.Ambient.PDSN,V.Ambient.PUser,V.Ambient.PPass)
+
+F.Intrinsic.String.Concat("SELECT ROUTER FROM JOB_HEADER WHERE JOB='",V.Passed.009000,"' AND SUFFIX='",V.Passed.009001,"'",V.Local.squery)
+F.ODBC.Connection!conx.OpenRecordsetRO("rstX",V.Local.squery)
+
+F.Intrinsic.Control.If(V.ODBC.conx!rstX.EOF,=,False)
+	V.Local.sRouter.Set(V.ODBC.conx!rstX.FieldValTrim!Router)
+	F.Intrinsic.Control.CallSub("SearchHLink","Router",V.Local.sRouter)
+	F.Intrinsic.Control.If(V.Args.sFile,<>,"")
+		F.Intrinsic.Task.ShellExec(0,"Print",V.Args.sfile,"","",0)
+		F.Intrinsic.File.File2String(V.Args.sFile,V.Local.sHTML)
+		F.Intrinsic.String.ExtractHTMLLinks(V.Local.sHTML,V.Local.sHLinkArr)
+		F.Intrinsic.Control.For(V.Local.i,0,V.Local.sHLinkArr.UBound,1)
+			F.Intrinsic.String.Replace(V.Local.sHLinkArr(V.Local.i),"/","\",V.Local.sHLinkArr(V.Local.i))
+			F.Intrinsic.Task.ShellExec(0,"Print",V.Local.sHLinkArr(V.Local.i),"","",0)
+		F.Intrinsic.Control.Next(V.Local.i)
+	F.Intrinsic.Control.EndIf
+F.Intrinsic.Control.ElseIf(V.ODBC.conx!rstX.EOF,=,True)
+	F.Intrinsic.String.Concat("Router not found for WO: ",V.passed.009000,"-",V.Passed.009001,V.Local.squery)
+	F.Intrinsic.ui.Msgbox(V.Local.sQuery)
+F.Intrinsic.Control.EndIf
+F.ODBC.conx!rstX.close
+F.ODBC.Connection!conx.close
+
+Program.Sub.Main.End
+
+Program.Sub.SearchHLink.Start
+V.Local.sMDB.Declare(String)
+V.Local.sSQL.Declare(String)
+
+F.Intrinsic.String.Concat(V.Caller.Pluginsdir,"\HTM\hlink.mdb",V.Local.sMDB)
+F.Odbc.Connection!Con.Openmdbconnection(V.Local.sMDB)
+
+F.Intrinsic.Variable.AddRV("sFile","")
+F.Intrinsic.String.Concat("Select * from LinkData where LinkType='35' and LinkCompany='",V.Caller.Companycode,"' and LinkRef='",V.Args.Router,"'",V.Local.sSQL)
+F.Odbc.Connection!Con.Openrecordsetrw("rst",V.Local.sSQL)
+F.Intrinsic.Control.If(V.Odbc.Con!rst.EOF,=,False)
+	F.Intrinsic.Variable.Addrv("sFile",V.Odbc.Con!rst.FieldVal!LinkURL)
+F.Intrinsic.Control.EndIf
+F.Odbc.Connection!Con.Close
+
+Program.Sub.SearchHLink.End
+
+Program.Sub.Comments.Start
+${$0$}$ATG_3667_PRINT_ROUTER_LinkPacket$}$RLK$}$4/1/2016
+${$1$}$$}$$}$0$}$10105$}$BJ020LZ-PROCESS-HOOK$}$4/1/2016 1:08:48 PM$}$(Program: BJ020LZ; Screen: )
+
+Program.Sub.Comments.End
+
